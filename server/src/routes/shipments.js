@@ -11,11 +11,10 @@ router.get('/', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT s.*, 
-        array_length(s.lot_ids, 1) as lot_count,
         u.name as created_by_name
       FROM shipments s
       LEFT JOIN users u ON s.created_by = u.id
-      ORDER BY s.export_date DESC
+      ORDER BY s.created_at DESC
     `);
     res.json({ success: true, data: result.rows });
   } catch (error) {
