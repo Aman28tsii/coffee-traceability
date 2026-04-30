@@ -21,10 +21,12 @@ const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config();
-app.set('trust proxy', 1);
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+
+// ✅ MOVE THIS LINE HERE - AFTER app is created
+app.set('trust proxy', 1);
 
 console.log('DATABASE_URL from env:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
 
@@ -58,19 +60,20 @@ const startServer = async () => {
   }));
   
   // CORS - allow both local and Render frontend
- const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://fili-coffee-traceability-frontend.onrender.com',  // Add this
-  process.env.FRONTEND_URL,
-  'https://*.onrender.com'
-].filter(Boolean);
-
-app.use(cors({ 
-  origin: allowedOrigins,
-  credentials: true,
-  optionsSuccessStatus: 200
-}));
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://fili-coffee-traceability-frontend.onrender.com',
+    process.env.FRONTEND_URL,
+    'https://*.onrender.com'
+  ].filter(Boolean);
+  
+  app.use(cors({ 
+    origin: allowedOrigins,
+    credentials: true,
+    optionsSuccessStatus: 200
+  }));
+  
   app.use(express.json({ limit: '10mb' }));
   app.use(morgan('dev'));
   app.use('/api/', limiter);
