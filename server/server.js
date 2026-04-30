@@ -25,6 +25,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+console.log('DATABASE_URL from env:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+
 const startServer = async () => {
   // Test database connection (won't crash Render if no DB yet)
   let dbConnected = false;
