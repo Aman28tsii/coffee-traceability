@@ -2,15 +2,7 @@ import { query } from '../config/database.js';
 
 export const getShipments = async (req, res) => {
   try {
-    const result = await query(`
-      SELECT s.*, 
-        l.lot_number,
-        f.name as farm_name
-      FROM shipments s
-      LEFT JOIN lots l ON s.lot_id = l.id
-      LEFT JOIN farms f ON l.farm_id = f.id
-      ORDER BY s.created_at DESC
-    `);
+    const result = await query('SELECT * FROM shipments ORDER BY created_at DESC');
     res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Get shipments error:', error);
@@ -21,12 +13,7 @@ export const getShipments = async (req, res) => {
 export const getShipmentById = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await query(`
-      SELECT s.*, l.lot_number
-      FROM shipments s
-      LEFT JOIN lots l ON s.lot_id = l.id
-      WHERE s.id = $1
-    `, [id]);
+    const result = await query('SELECT * FROM shipments WHERE id = $1', [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Shipment not found' });
@@ -41,19 +28,18 @@ export const getShipmentById = async (req, res) => {
 
 export const createShipment = async (req, res) => {
   try {
-    const { lot_id, destination, shipment_date, carrier, tracking_number } = req.body;
-    const userId = req.user.id;
+    const { lot_id, origin, destination, status } = req.body;
     
-    // Generate shipment number
+    // Generate unique shipment number
     const result2 = await query("SELECT MAX(CAST(SUBSTRING(shipment_number FROM 4) AS INTEGER)) as max FROM shipments WHERE shipment_number LIKE 'SHP%'");
     const nextNum = (result2.rows[0].max || 0) + 1;
     const shipmentNumber = `SHP${String(nextNum).padStart(4, '0')}`;
     
     const result = await query(
-      `INSERT INTO shipments (shipment_number, lot_id, destination, shipment_date, carrier, tracking_number, created_by, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
+      `INSERT INTO shipments (shipment_number, lot_id, origin, destination, status)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [shipmentNumber, lot_id, destination, shipment_date, carrier, tracking_number, userId]
+      [shipmentNumber, lot_id, origin, destination, status || 'pending']
     );
     
     res.status(201).json({ success: true, data: result.rows[0] });
@@ -69,10 +55,7 @@ export const updateShipmentStatus = async (req, res) => {
     const { status } = req.body;
     
     const result = await query(
-      `UPDATE shipments 
-       SET status = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2
-       RETURNING *`,
+      'UPDATE shipments SET status = $1 WHERE id = $2 RETURNING *',
       [status, id]
     );
     
